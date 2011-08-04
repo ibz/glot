@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+from getopt import getopt
 import math
 import re
 import sys
@@ -7,6 +8,8 @@ import xml.sax
 import xml.sax.handler
 
 LATLON_RE = re.compile(r"^([0-9]+\.[0-9]+)([NSEW])$")
+PARSE_TRACKS = 1
+PARSE_ROUTES = 2
 
 def parse_latlon(value):
     try:
@@ -21,22 +24,35 @@ def parse_latlon(value):
                 return -float(value)
 
 class GpxHandler(xml.sax.handler.ContentHandler):
-    def __init__(self):
-        self.points = list()
+    def __init__(self, parse_type):
+        if parse_type == PARSE_TRACKS:
+            self.PATH_ELEMENT = "trk"
+            self.POINT_ELEMENT = "trkpt"
+        elif parse_type == PARSE_ROUTES:
+            self.PATH_ELEMENT = "rte"
+            self.POINT_ELEMENT = "rtept"
+
+        self.paths = []
+        self.points = []
 
     def startElement(self, name, attrs):
-        if name == 'trkpt':
+        if name == self.POINT_ELEMENT:
             lat = parse_latlon(attrs['lat'])
             lon = parse_latlon(attrs['lon'])
             self.points.append((lat, lon))
 
+    def endElement(self, name):
+        if name == self.PATH_ELEMENT:
+            self.paths.append(self.points)
+            self.points = []
+
 def point_filter(step):
     return lambda points: [p for i, p in enumerate(points) if i == 0 or i == len(points) - 1 or i % step == 0]
 
-def parse_gpx(fileobj, filter_func):
-    handler = GpxHandler()
+def parse_gpx(fileobj, parse_type, filter_func):
+    handler = GpxHandler(parse_type)
     xml.sax.parse(fileobj, handler)
-    return filter_func(handler.points)
+    return [filter_func(path) for path in handler.paths]
 
 def latlon2xy(lat, lon):
     return lon, -math.log(math.tan(math.pi / 4 + lat * (math.pi / 180) / 2))
@@ -56,19 +72,21 @@ SVG_END = "</g></svg>"
 SVG_HEIGHT = 1000
 SVG_WIDTH = 1000
 
-def gen_svg(points):
+def gen_svg(paths):
     segments = []
     min_x, min_y, max_x, max_y = None, None, None, None
-    for i in range(len(points) - 1):
-        x1, y1 = latlon2xy(*points[i])
-        x2, y2 = latlon2xy(*points[i + 1])
 
-        min_x = min(min_x or x1, x1, x2)
-        min_y = min(min_y or y1, y1, y2)
-        max_x = max(max_x or x1, x1, x2)
-        max_y = max(max_y or y1, y1, y2)
+    for path in paths:
+        for i in range(len(path) - 1):
+            x1, y1 = latlon2xy(*path[i])
+            x2, y2 = latlon2xy(*path[i + 1])
 
-        segments.append((x1, y1, x2, y2))
+            min_x = min(min_x or x1, x1, x2)
+            min_y = min(min_y or y1, y1, y2)
+            max_x = max(max_x or x1, x1, x2)
+            max_y = max(max_y or y1, y1, y2)
+
+            segments.append((x1, y1, x2, y2))
 
     sys.stdout.write(SVG_START)
     for x1, y1, x2, y2 in segments:
@@ -81,16 +99,20 @@ def gen_svg(points):
     sys.stdout.write(SVG_END)
 
 if __name__ == '__main__':
-    if sys.argv[1] == "-s":
-        step = int(sys.argv[2])
-        filter_func = point_filter(step)
-        filenames = sys.argv[3:]
-    else:
-        filter_func = lambda points: points
-        filenames = sys.argv[1:]
+    filter_func = lambda points: points
+    parse_type = PARSE_TRACKS
 
-    points = []
-    for filename in filenames:
+    optlist, args = getopt(sys.argv[1:], "s:tr")
+    for opt, val in optlist:
+        if opt == "-s":
+            filter_func = point_filter(int(val))
+        elif opt == "-t":
+            parse_type = PARSE_TRACKS
+        elif opt == "-r":
+            parse_type = PARSE_ROUTES
+
+    paths = []
+    for filename in args:
         with file(filename) as f:
-            points.extend(parse_gpx(f, filter_func))
-    gen_svg(points)
+            paths.extend(parse_gpx(f, parse_type, filter_func))
+    gen_svg(paths)
