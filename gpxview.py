@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+from collections import defaultdict
 from getopt import getopt
 import math
 import re
@@ -22,6 +23,22 @@ def parse_latlon(value):
                 return float(value)
             elif direction in ("S", "W"):
                 return -float(value)
+
+def distance(p1, p2):
+    d_lat = math.radians(p2['lat'] - p1['lat'])
+    d_lon = math.radians(p2['lon'] - p1['lon'])
+    a = math.sin(d_lat / 2) ** 2 + math.cos(math.radians(p1['lat'])) * math.cos(math.radians(p2['lat'])) * math.sin(d_lon / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return int(6371 * 1000 * c) # distance in meters (radius of the Earth being 6371 * 1000)
+
+def avg(l):
+    return sum(l) / len(l)
+
+def find_nearby_point(points, point, radius):
+    for p in points:
+        if distance(p, point) <= radius:
+            return p
+    return None
 
 class GpxHandler(xml.sax.handler.ContentHandler):
     def __init__(self, parse_type):
@@ -63,13 +80,58 @@ class GpxHandler(xml.sax.handler.ContentHandler):
             self.paths.append(self.path)
             self.path = None
 
-def point_filter(step):
-    return lambda points: [p for i, p in enumerate(points) if i == 0 or i == len(points) - 1 or i % step == 0]
-
-def parse_gpx(fileobj, parse_type, filter_func):
+def parse_gpx(fileobj, parse_type):
     handler = GpxHandler(parse_type)
     xml.sax.parse(fileobj, handler)
-    return [{'name': path['name'], 'points': filter_func(path['points'])} for path in handler.paths]
+    return handler.paths
+
+def skip_filter(skip):
+    def _filter(paths):
+        for path in paths:
+            keep = lambda i: i == 0 or i % skip == 0 or i == len(path['points']) - 1
+            path['points'] = [p for i, p in enumerate(path['points']) if keep(i)]
+        return paths
+    return _filter
+
+def name_match_filter(radius):
+    def find_group(groups, point):
+        for group in groups:
+            if find_nearby_point(group, point, radius) is not None:
+                return group
+        return None
+
+    def group_points(points):
+        groups = []
+        for point in points:
+            group = find_group(groups, point)
+            if group is None:
+                group = []
+                groups.append(group)
+            group.append(point)
+        return groups
+
+    def _filter(paths):
+        all_points = defaultdict(list)
+
+        for path in paths:
+            for point in path['points']:
+                all_points[point['name']].append(point)
+
+        all_points_grouped = dict((name, group_points(points)) for name, points in all_points.iteritems())
+
+        all_group_coords = {}
+        for name, groups in all_points_grouped.iteritems():
+            all_group_coords[name] = [{'lat': avg([p['lat'] for p in group]), 'lon': avg([p['lon'] for p in group])} for group in groups]
+
+        for path in paths:
+            for point in path['points']:
+                group_coords = find_nearby_point(all_group_coords[point['name']], point, radius)
+                point['lat'] = group_coords['lat']
+                point['lon'] = group_coords['lon']
+
+        return paths
+
+    return _filter
 
 def latlon2xy(lat, lon):
     return lon, -math.log(math.tan(math.pi / 4 + lat * (math.pi / 180) / 2))
@@ -156,18 +218,23 @@ def gen_kml(paths):
     sys.stdout.write(KML_END)
 
 if __name__ == '__main__':
-    filter_func = lambda points: points
+    filter_func = None
     output_func = None
     parse_type = PARSE_TRACKS
 
-    optlist, args = getopt(sys.argv[1:], "s:tro:")
+    optlist, args = getopt(sys.argv[1:], "trf:o:")
     for opt, val in optlist:
-        if opt == "-s":
-            filter_func = point_filter(int(val))
-        elif opt == "-t":
+        if opt == "-t":
             parse_type = PARSE_TRACKS
         elif opt == "-r":
             parse_type = PARSE_ROUTES
+        elif opt == "-f":
+            if val.startswith("skip="):
+                skip = int(val[len("skip="):])
+                filter_func = skip_filter(skip)
+            elif val.startswith("name-match-radius="):
+                radius = int(val[len("name-match-radius="):])
+                filter_func = name_match_filter(radius)
         elif opt == "-o":
             if val == "svg":
                 output_func = gen_svg
@@ -181,5 +248,9 @@ if __name__ == '__main__':
     paths = []
     for filename in args:
         with file(filename) as f:
-            paths.extend(parse_gpx(f, parse_type, filter_func))
+            paths.extend(parse_gpx(f, parse_type))
+
+    if filter_func is not None:
+        paths = filter_func(paths)
+
     output_func(paths)
