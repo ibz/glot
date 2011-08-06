@@ -32,19 +32,32 @@ class GpxHandler(xml.sax.handler.ContentHandler):
             self.PATH_ELEMENT = "rte"
             self.POINT_ELEMENT = "rtept"
 
+        self.current_node = None
+
+        self.point = None
+        self.path = None
+
         self.paths = []
-        self.points = []
 
     def startElement(self, name, attrs):
+        self.current_node = name
+
         if name == self.POINT_ELEMENT:
-            lat = parse_latlon(attrs['lat'])
-            lon = parse_latlon(attrs['lon'])
-            self.points.append((lat, lon))
+            self.point = {'lat': parse_latlon(attrs['lat']), 'lon': parse_latlon(attrs['lon'])}
+        elif name == self.PATH_ELEMENT:
+            self.path = []
+
+    def characters(self, content):
+        if self.point is not None and self.current_node == "name":
+            self.point['name'] = content.strip()
 
     def endElement(self, name):
-        if name == self.PATH_ELEMENT:
-            self.paths.append(self.points)
-            self.points = []
+        if name == self.POINT_ELEMENT:
+            self.path.append(self.point)
+            self.point = None
+        elif name == self.PATH_ELEMENT:
+            self.paths.append(self.path)
+            self.path = None
 
 def point_filter(step):
     return lambda points: [p for i, p in enumerate(points) if i == 0 or i == len(points) - 1 or i % step == 0]
@@ -78,8 +91,10 @@ def gen_svg(paths):
 
     for path in paths:
         for i in range(len(path) - 1):
-            x1, y1 = latlon2xy(*path[i])
-            x2, y2 = latlon2xy(*path[i + 1])
+            p1, p2 = path[i], path[i + 1]
+
+            x1, y1 = latlon2xy(p1['lat'], p1['lon'])
+            x2, y2 = latlon2xy(p2['lat'], p2['lon'])
 
             min_x = min(min_x or x1, x1, x2)
             min_y = min(min_y or y1, y1, y2)
