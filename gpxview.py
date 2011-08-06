@@ -113,11 +113,50 @@ def gen_svg(paths):
         sys.stdout.write("""<line x1="%s" y1="%s" x2="%s" y2="%s" style="stroke:rgb(100,100,100);stroke-width:1" />\n""" % (ax1, ay1, ax2, ay2))
     sys.stdout.write(SVG_END)
 
+KML_START = """<?xml version="1.0" encoding="UTF-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
+<Document>
+<Style id="track_n">
+  <LabelStyle><scale>0</scale></LabelStyle>
+  <IconStyle><scale>.5</scale><Icon><href>http://earth.google.com/images/kml-icons/track-directional/track-none.png</href></Icon></IconStyle>
+</Style>
+<Style id="track_h">
+  <IconStyle><scale>1.2</scale><Icon><href>http://earth.google.com/images/kml-icons/track-directional/track-none.png</href></Icon></IconStyle>
+</Style>
+<StyleMap id="track">
+  <Pair><key>normal</key><styleUrl>#track_n</styleUrl></Pair>
+  <Pair><key>highlight</key><styleUrl>#track_h</styleUrl></Pair>
+</StyleMap>
+<Style id="line">
+  <LineStyle><color>99ffac59</color><width>6</width></LineStyle>
+</Style>
+"""
+
+KML_END = "</Document></kml>"
+
+def gen_kml(paths):
+    sys.stdout.write(KML_START)
+    sys.stdout.write("<Folder><name>Tracks</name>\n")
+    for path in paths:
+        sys.stdout.write("<Folder>\n")
+        sys.stdout.write("<Folder><name>Points</name>\n")
+        for point in path:
+            sys.stdout.write(("<Placemark><name>%(name)s</name><styleUrl>#track</styleUrl><Point><coordinates>%(lon)s,%(lat)s</coordinates></Point></Placemark>\n" % point).encode("utf-8"))
+        sys.stdout.write("</Folder>\n")
+        sys.stdout.write("<Placemark><name>Path</name><styleUrl>#line</styleUrl><LineString><tessellate>1</tessellate><coordinates>\n")
+        for point in path:
+            sys.stdout.write("%(lon)s,%(lat)s\n" % point)
+        sys.stdout.write("</coordinates></LineString></Placemark>\n")
+        sys.stdout.write("</Folder>\n")
+    sys.stdout.write("</Folder>\n")
+    sys.stdout.write(KML_END)
+
 if __name__ == '__main__':
     filter_func = lambda points: points
+    output_func = None
     parse_type = PARSE_TRACKS
 
-    optlist, args = getopt(sys.argv[1:], "s:tr")
+    optlist, args = getopt(sys.argv[1:], "s:tro:")
     for opt, val in optlist:
         if opt == "-s":
             filter_func = point_filter(int(val))
@@ -125,9 +164,18 @@ if __name__ == '__main__':
             parse_type = PARSE_TRACKS
         elif opt == "-r":
             parse_type = PARSE_ROUTES
+        elif opt == "-o":
+            if val == "svg":
+                output_func = gen_svg
+            elif val == "kml":
+                output_func = gen_kml
+
+    if output_func is None:
+        sys.stderr.write("Output not specified. Use -o svg or -o kml.\n")
+        sys.exit(1)
 
     paths = []
     for filename in args:
         with file(filename) as f:
             paths.extend(parse_gpx(f, parse_type, filter_func))
-    gen_svg(paths)
+    output_func(paths)
