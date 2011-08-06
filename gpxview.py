@@ -32,7 +32,7 @@ class GpxHandler(xml.sax.handler.ContentHandler):
             self.PATH_ELEMENT = "rte"
             self.POINT_ELEMENT = "rtept"
 
-        self.current_node = None
+        self.xml_path = []
 
         self.point = None
         self.path = None
@@ -40,20 +40,24 @@ class GpxHandler(xml.sax.handler.ContentHandler):
         self.paths = []
 
     def startElement(self, name, attrs):
-        self.current_node = name
+        self.xml_path.append(name)
 
         if name == self.POINT_ELEMENT:
             self.point = {'lat': parse_latlon(attrs['lat']), 'lon': parse_latlon(attrs['lon'])}
         elif name == self.PATH_ELEMENT:
-            self.path = []
+            self.path = {'points': []}
 
     def characters(self, content):
-        if self.point is not None and self.current_node == "name":
+        if self.xml_path[-2:] == [self.PATH_ELEMENT, "name"]:
+            self.path['name'] = content.strip()
+        elif self.xml_path[-2:] == [self.POINT_ELEMENT, "name"]:
             self.point['name'] = content.strip()
 
     def endElement(self, name):
+        self.xml_path.pop()
+
         if name == self.POINT_ELEMENT:
-            self.path.append(self.point)
+            self.path['points'].append(self.point)
             self.point = None
         elif name == self.PATH_ELEMENT:
             self.paths.append(self.path)
@@ -65,7 +69,7 @@ def point_filter(step):
 def parse_gpx(fileobj, parse_type, filter_func):
     handler = GpxHandler(parse_type)
     xml.sax.parse(fileobj, handler)
-    return [filter_func(path) for path in handler.paths]
+    return [{'name': path['name'], 'points': filter_func(path['points'])} for path in handler.paths]
 
 def latlon2xy(lat, lon):
     return lon, -math.log(math.tan(math.pi / 4 + lat * (math.pi / 180) / 2))
@@ -90,8 +94,8 @@ def gen_svg(paths):
     min_x, min_y, max_x, max_y = None, None, None, None
 
     for path in paths:
-        for i in range(len(path) - 1):
-            p1, p2 = path[i], path[i + 1]
+        for i in range(len(path['points']) - 1):
+            p1, p2 = path['points'][i], path['points'][i + 1]
 
             x1, y1 = latlon2xy(p1['lat'], p1['lon'])
             x2, y2 = latlon2xy(p2['lat'], p2['lon'])
@@ -138,13 +142,13 @@ def gen_kml(paths):
     sys.stdout.write(KML_START)
     sys.stdout.write("<Folder><name>Tracks</name>\n")
     for path in paths:
-        sys.stdout.write("<Folder>\n")
+        sys.stdout.write(("<Folder><name>%s</name>\n" % path['name']).encode("utf-8"))
         sys.stdout.write("<Folder><name>Points</name>\n")
-        for point in path:
+        for point in path['points']:
             sys.stdout.write(("<Placemark><name>%(name)s</name><styleUrl>#track</styleUrl><Point><coordinates>%(lon)s,%(lat)s</coordinates></Point></Placemark>\n" % point).encode("utf-8"))
         sys.stdout.write("</Folder>\n")
         sys.stdout.write("<Placemark><name>Path</name><styleUrl>#line</styleUrl><LineString><tessellate>1</tessellate><coordinates>\n")
-        for point in path:
+        for point in path['points']:
             sys.stdout.write("%(lon)s,%(lat)s\n" % point)
         sys.stdout.write("</coordinates></LineString></Placemark>\n")
         sys.stdout.write("</Folder>\n")
