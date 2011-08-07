@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 from getopt import getopt
+from itertools import izip
 import math
 import re
 import sys
@@ -33,6 +34,15 @@ def distance(p1, p2):
 
 def avg(l):
     return sum(l) / len(l)
+
+def minmax(l):
+    min = max = None
+    for e in l:
+        if min is None or e < min:
+            min = e
+        if max is None or e > max:
+            max = e
+    return min, max
 
 def find_nearby_point(points, point, radius):
     for p in points:
@@ -162,15 +172,18 @@ SVG_HEIGHT = 1000
 SVG_WIDTH = 1000
 
 def gen_svg(paths, output_path, output_points):
-    segments = []
-    min_x, min_y, max_x, max_y = None, None, None, None
+    min_x = min_y = max_x = max_y = None
 
-    svg_paths = []
+    # all segments and points with associated weight
+    segments = defaultdict(int)
+    points = defaultdict(int)
 
     for path in paths:
         svg_path = []
         for p in path['points']:
             x, y = latlon2xy(p['lat'], p['lon'])
+
+            svg_path.append((x, y))
 
             if min_x is None or x < min_x:
                 min_x = x
@@ -181,21 +194,31 @@ def gen_svg(paths, output_path, output_points):
             if max_y is None or y > max_y:
                 max_y = y
 
-            svg_path.append((x, y))
-        svg_paths.append(svg_path)
+            if output_points:
+                points[(x, y)] += 1
+
+        if output_path:
+            for (x1, y1), (x2, y2) in izip(svg_path, svg_path[1:]):
+                segments[(x1, y1, x2, y2)] += 1
 
     sys.stdout.write(SVG_START)
 
     if output_path:
-        for svg_path in svg_paths:
-            sys.stdout.write("""<polyline points="%s" style="stroke:rgb(100,100,100);stroke-width:1;fill:none" />"""
-                             % " ".join("%s,%s" % (absolute(x, SVG_WIDTH, min_x, max_x), absolute(y, SVG_HEIGHT, min_y, max_y)) for x, y in svg_path))
+        min_weight, max_weight = minmax(segments.itervalues())
+
+        for (x1, y1, x2, y2), weight in sorted(segments.iteritems(), key=lambda (s, w): w):
+            params = {'x1': absolute(x1, SVG_WIDTH, min_x, max_x), 'y1': absolute(y1, SVG_HEIGHT, min_y, max_y),
+                      'x2': absolute(x2, SVG_WIDTH, min_x, max_x), 'y2': absolute(y2, SVG_HEIGHT, min_y, max_y),
+                      'c': 200 - (absolute(weight, 200, min_weight, max_weight) if min_weight != max_weight else 0)}
+            sys.stdout.write("""<line x1="%(x1)s" y1="%(y1)s" x2="%(x2)s" y2="%(y2)s" style="stroke:rgb(%(c)s,%(c)s,%(c)s);stroke-width:1;" />\n""" % params)
 
     if output_points:
-        for svg_path in svg_paths:
-            for x, y in svg_path:
-                sys.stdout.write("""<circle cx="%s" cy="%s" r="2" fill="red" />\n"""
-                                 % (absolute(x, SVG_WIDTH, min_x, max_x), absolute(y, SVG_HEIGHT, min_y, max_y)))
+        min_weight, max_weight = minmax(points.itervalues())
+
+        for (x, y), weight in sorted(points.iteritems(), key=lambda (p, w): w):
+            params = {'x': absolute(x, SVG_WIDTH, min_x, max_x), 'y': absolute(y, SVG_HEIGHT, min_y, max_y),
+                      'c': 200 - absolute(weight, 200, min_weight, max_weight)}
+            sys.stdout.write("""<circle cx="%(x)s" cy="%(y)s" r="1" fill="rgb(%(c)s,%(c)s,%(c)s)" />\n""" % params)
 
     sys.stdout.write(SVG_END)
 
