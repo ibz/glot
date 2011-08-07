@@ -164,6 +164,7 @@ SVG_START = """<?xml version="1.0" standalone="no" ?>
 <svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <script xlink:href="http://svgpan.googlecode.com/svn/trunk/SVGPan.js" />
 <g id="viewport">
+<rect x="0" y="0" width="1000" height="1000" style="fill:white" />
 """
 
 SVG_END = "</g></svg>"
