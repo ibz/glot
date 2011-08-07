@@ -161,32 +161,42 @@ SVG_END = "</g></svg>"
 SVG_HEIGHT = 1000
 SVG_WIDTH = 1000
 
-def gen_svg(paths):
+def gen_svg(paths, output_path, output_points):
     segments = []
     min_x, min_y, max_x, max_y = None, None, None, None
 
+    svg_paths = []
+
     for path in paths:
-        for i in range(len(path['points']) - 1):
-            p1, p2 = path['points'][i], path['points'][i + 1]
+        svg_path = []
+        for p in path['points']:
+            x, y = latlon2xy(p['lat'], p['lon'])
 
-            x1, y1 = latlon2xy(p1['lat'], p1['lon'])
-            x2, y2 = latlon2xy(p2['lat'], p2['lon'])
+            if min_x is None or x < min_x:
+                min_x = x
+            if max_x is None or x > max_x:
+                max_x = x
+            if min_y is None or y < min_y:
+                min_y = y
+            if max_y is None or y > max_y:
+                max_y = y
 
-            min_x = min(min_x or x1, x1, x2)
-            min_y = min(min_y or y1, y1, y2)
-            max_x = max(max_x or x1, x1, x2)
-            max_y = max(max_y or y1, y1, y2)
-
-            segments.append((x1, y1, x2, y2))
+            svg_path.append((x, y))
+        svg_paths.append(svg_path)
 
     sys.stdout.write(SVG_START)
-    for x1, y1, x2, y2 in segments:
-        ax1 = absolute(x1, SVG_WIDTH, min_x, max_x)
-        ay1 = absolute(y1, SVG_HEIGHT, min_y, max_y)
-        ax2 = absolute(x2, SVG_WIDTH, min_x, max_x)
-        ay2 = absolute(y2, SVG_HEIGHT, min_y, max_y)
 
-        sys.stdout.write("""<line x1="%s" y1="%s" x2="%s" y2="%s" style="stroke:rgb(100,100,100);stroke-width:1" />\n""" % (ax1, ay1, ax2, ay2))
+    if output_path:
+        for svg_path in svg_paths:
+            sys.stdout.write("""<polyline points="%s" style="stroke:rgb(100,100,100);stroke-width:1;fill:none" />"""
+                             % " ".join("%s,%s" % (absolute(x, SVG_WIDTH, min_x, max_x), absolute(y, SVG_HEIGHT, min_y, max_y)) for x, y in svg_path))
+
+    if output_points:
+        for svg_path in svg_paths:
+            for x, y in svg_path:
+                sys.stdout.write("""<circle cx="%s" cy="%s" r="2" fill="red" />\n"""
+                                 % (absolute(x, SVG_WIDTH, min_x, max_x), absolute(y, SVG_HEIGHT, min_y, max_y)))
+
     sys.stdout.write(SVG_END)
 
 KML_START = """<?xml version="1.0" encoding="UTF-8" ?>
@@ -210,25 +220,29 @@ KML_START = """<?xml version="1.0" encoding="UTF-8" ?>
 
 KML_END = "</Document></kml>"
 
-def gen_kml(paths):
+def gen_kml(paths, output_path, output_points):
     sys.stdout.write(KML_START)
     sys.stdout.write("<Folder><name>Tracks</name>\n")
     for path in paths:
         sys.stdout.write(("<Folder><name>%s</name>\n" % path['name']).encode("utf-8"))
-        sys.stdout.write("<Folder><name>Points</name>\n")
-        for point in path['points']:
-            sys.stdout.write(("<Placemark><name>%(name)s</name><styleUrl>#track</styleUrl><Point><coordinates>%(lon)s,%(lat)s</coordinates></Point></Placemark>\n" % point).encode("utf-8"))
-        sys.stdout.write("</Folder>\n")
-        sys.stdout.write("<Placemark><name>Path</name><styleUrl>#line</styleUrl><LineString><tessellate>1</tessellate><coordinates>\n")
-        for point in path['points']:
-            sys.stdout.write("%(lon)s,%(lat)s\n" % point)
-        sys.stdout.write("</coordinates></LineString></Placemark>\n")
+        if output_points:
+            sys.stdout.write("<Folder><name>Points</name>\n")
+            for point in path['points']:
+                sys.stdout.write(("<Placemark><name>%(name)s</name><styleUrl>#track</styleUrl><Point><coordinates>%(lon)s,%(lat)s</coordinates></Point></Placemark>\n" % point).encode("utf-8"))
+            sys.stdout.write("</Folder>\n")
+        if output_path:
+            sys.stdout.write("<Placemark><name>Path</name><styleUrl>#line</styleUrl><LineString><tessellate>1</tessellate><coordinates>\n")
+            for point in path['points']:
+                sys.stdout.write("%(lon)s,%(lat)s\n" % point)
+            sys.stdout.write("</coordinates></LineString></Placemark>\n")
         sys.stdout.write("</Folder>\n")
     sys.stdout.write("</Folder>\n")
     sys.stdout.write(KML_END)
 
 if __name__ == '__main__':
     filter_func = None
+    output_path = True
+    output_points = False
     output_func = None
     parse_type = PARSE_TRACKS
 
@@ -246,13 +260,20 @@ if __name__ == '__main__':
                 radius = int(val[len("name-match-radius="):])
                 filter_func = name_match_filter(radius)
         elif opt == "-o":
-            if val == "svg":
+            if val.startswith("svg"):
                 output_func = gen_svg
-            elif val == "kml":
+            elif val.startswith("kml"):
                 output_func = gen_kml
+            else:
+                sys.stderr.write("Invalid output.\n")
+                sys.exit(1)
+            if ":" in val:
+                output_objects = val[val.index(":") + 1:].split(",")
+                output_path = "path" in output_objects
+                output_points = "points" in output_objects
 
     if output_func is None:
-        sys.stderr.write("Output not specified. Use -o svg or -o kml.\n")
+        sys.stderr.write("Output not specified. Use -o (svg|kml)[:(path|points)[,(path|points)]].\n")
         sys.exit(1)
 
     paths = []
@@ -263,4 +284,4 @@ if __name__ == '__main__':
     if filter_func is not None:
         paths = filter_func(paths)
 
-    output_func(paths)
+    output_func(paths, output_path, output_points)
