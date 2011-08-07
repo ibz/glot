@@ -209,16 +209,18 @@ def gen_svg(paths, output_path, output_points):
         for (x1, y1, x2, y2), weight in sorted(segments.iteritems(), key=lambda (s, w): w):
             params = {'x1': absolute(x1, SVG_WIDTH, min_x, max_x), 'y1': absolute(y1, SVG_HEIGHT, min_y, max_y),
                       'x2': absolute(x2, SVG_WIDTH, min_x, max_x), 'y2': absolute(y2, SVG_HEIGHT, min_y, max_y),
-                      'c': 200 - (absolute(weight, 200, min_weight, max_weight) if min_weight != max_weight else 0)}
-            sys.stdout.write("""<line x1="%(x1)s" y1="%(y1)s" x2="%(x2)s" y2="%(y2)s" style="stroke:rgb(%(c)s,%(c)s,%(c)s);stroke-width:1;" />\n""" % params)
+                      's': 10 + (absolute(weight, 80, min_weight, max_weight) if min_weight != max_weight else 0),
+                      'l': 80 - (absolute(weight, 70, min_weight, max_weight) if min_weight != max_weight else 0)}
+            sys.stdout.write("""<line x1="%(x1)s" y1="%(y1)s" x2="%(x2)s" y2="%(y2)s" style="stroke:hsl(240,%(s)s%%,%(l)s%%);stroke-width:1;" />\n""" % params)
 
     if output_points:
         min_weight, max_weight = minmax(points.itervalues())
 
         for (x, y), weight in sorted(points.iteritems(), key=lambda (p, w): w):
             params = {'x': absolute(x, SVG_WIDTH, min_x, max_x), 'y': absolute(y, SVG_HEIGHT, min_y, max_y),
-                      'c': 200 - absolute(weight, 200, min_weight, max_weight)}
-            sys.stdout.write("""<circle cx="%(x)s" cy="%(y)s" r="1" fill="rgb(%(c)s,%(c)s,%(c)s)" />\n""" % params)
+                      's': 10 + (absolute(weight, 80, min_weight, max_weight) if min_weight != max_weight else 0),
+                      'l': 80 - (absolute(weight, 70, min_weight, max_weight) if min_weight != max_weight else 0)}
+            sys.stdout.write("""<circle cx="%(x)s" cy="%(y)s" r="1" fill="hsl(0,%(s)s%%,%(l)s%%)" />\n""" % params)
 
     sys.stdout.write(SVG_END)
 
