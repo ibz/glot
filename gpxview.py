@@ -40,6 +40,16 @@ def find_nearby_point(points, point, radius):
             return p
     return None
 
+def find_closest_point(points, point):
+    closest_point = None
+    min_distance = None
+    for p in points:
+        d = distance(p, point)
+        if min_distance is None or d < min_distance:
+            min_distance = d
+            closest_point = p
+    return closest_point
+
 class GpxHandler(xml.sax.handler.ContentHandler):
     def __init__(self, parse_type):
         if parse_type == PARSE_TRACKS:
@@ -125,7 +135,7 @@ def name_match_filter(radius):
 
         for path in paths:
             for point in path['points']:
-                group_coords = find_nearby_point(all_group_coords[point['name']], point, radius)
+                group_coords = find_closest_point(all_group_coords[point['name']], point)
                 point['lat'] = group_coords['lat']
                 point['lon'] = group_coords['lon']
 
