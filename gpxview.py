@@ -249,8 +249,8 @@ KML_END = "</Document></kml>"
 def gen_kml(paths, output_path, output_points):
     sys.stdout.write(KML_START)
     sys.stdout.write("<Folder><name>Tracks</name>\n")
-    for path in paths:
-        sys.stdout.write(("<Folder><name>%s</name>\n" % path['name']).encode("utf-8"))
+    for i, path in enumerate(paths, 1):
+        sys.stdout.write(("<Folder><name>%s</name>\n" % path.get('name', "Track %s" % i)).encode("utf-8"))
         if output_points:
             sys.stdout.write("<Folder><name>Points</name>\n")
             for point in path['points']:
