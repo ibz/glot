@@ -80,7 +80,7 @@ class GpxHandler(xml.sax.handler.ContentHandler):
         self.xml_path.append(name)
 
         if name == self.POINT_ELEMENT:
-            self.point = {'lat': parse_latlon(attrs['lat']), 'lon': parse_latlon(attrs['lon'])}
+            self.point = {'lat': parse_latlon(attrs['lat']), 'lon': parse_latlon(attrs['lon']), 'name': ""}
         elif name == self.PATH_ELEMENT:
             self.path = {'points': []}
 
