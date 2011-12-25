@@ -327,6 +327,9 @@ if __name__ == '__main__':
             if val.startswith("gpx"):
                 import in_gpx
                 input_func = in_gpx.parse
+            elif val.startswith("columbus"):
+                import in_columbus
+                input_func = in_columbus.parse
             else:
                 sys.stderr.write("Invalid input.\n")
                 sys.exit(1)
