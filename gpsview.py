@@ -5,28 +5,9 @@ import datetime
 from getopt import getopt
 from itertools import izip
 import math
-import re
 import sys
-import xml.sax
-import xml.sax.handler
 
 from utils import distance
-
-LATLON_RE = re.compile(r"^([0-9]+\.[0-9]+)([NSEW])$")
-PARSE_TRACKS = 1
-PARSE_ROUTES = 2
-
-def parse_latlon(value):
-    try:
-        return float(value)
-    except ValueError:
-        match = LATLON_RE.match(value)
-        if match is not None:
-            value, direction = match.groups()
-            if direction in ("N", "E"):
-                return float(value)
-            elif direction in ("S", "W"):
-                return -float(value)
 
 def avg(l):
     return sum(l) / len(l)
@@ -55,70 +36,6 @@ def find_closest_point(points, point):
             min_distance = d
             closest_point = p
     return closest_point
-
-class GpxHandler(xml.sax.handler.ContentHandler):
-    def __init__(self, parse_type):
-        if parse_type == PARSE_TRACKS:
-            self.PATH_ELEMENT = "trk"
-            self.POINT_ELEMENT = "trkpt"
-        elif parse_type == PARSE_ROUTES:
-            self.PATH_ELEMENT = "rte"
-            self.POINT_ELEMENT = "rtept"
-
-        self.xml_path = []
-
-        self.point = None
-        self.path = None
-
-        self.paths = []
-
-        self.TIME_FORMAT = None
-
-    def startElement(self, name, attrs):
-        self.xml_path.append(name)
-
-        if name == self.POINT_ELEMENT:
-            self.point = {'lat': parse_latlon(attrs['lat']), 'lon': parse_latlon(attrs['lon']), 'name': ""}
-        elif name == self.PATH_ELEMENT:
-            self.path = {'points': []}
-
-    def characters(self, content):
-        if self.xml_path[-2:] == [self.PATH_ELEMENT, "name"]:
-            self.path['name'] = content.strip()
-        elif self.xml_path[-2:] == [self.POINT_ELEMENT, "name"]:
-            self.point['name'] = content.strip()
-        elif self.xml_path[-2:] == [self.POINT_ELEMENT, "ele"]:
-            self.point['ele'] = self.point.get('ele', "") + content
-        elif self.xml_path[-2:] == [self.POINT_ELEMENT, "time"]:
-            self.point['time'] = self.point.get('time', "") + content
-
-    def endElement(self, name):
-        self.xml_path.pop()
-
-        if name == self.POINT_ELEMENT:
-            if 'ele' in self.point:
-                self.point['ele'] = float(self.point['ele'].strip())
-            if 'time' in self.point:
-                if self.TIME_FORMAT is None:
-                    for time_format in ["%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%SZ"]:
-                        try:
-                            datetime.datetime.strptime(self.point['time'], time_format)
-                            self.TIME_FORMAT = time_format
-                        except ValueError:
-                            pass
-                if self.TIME_FORMAT is None:
-                    raise Exception("Can't parse time.")
-                self.point['time'] = datetime.datetime.strptime(self.point['time'], self.TIME_FORMAT)
-            self.path['points'].append(self.point)
-            self.point = None
-        elif name == self.PATH_ELEMENT:
-            self.paths.append(self.path)
-            self.path = None
-
-def parse_gpx(fileobj, parse_type):
-    handler = GpxHandler(parse_type)
-    xml.sax.parse(fileobj, handler)
-    return handler.paths
 
 def skip_filter(skip):
     def _filter(paths):
@@ -398,17 +315,23 @@ def gen_stats(paths, **__):
         gen_path_stats(path)
 
 if __name__ == '__main__':
+    input_func = None
+    input_options = ""
     filter_func = None
     output_func = None
     output_options = {'output_path': True, 'output_points': False}
-    parse_type = PARSE_TRACKS
 
-    optlist, args = getopt(sys.argv[1:], "trf:o:")
+    optlist, args = getopt(sys.argv[1:], "i:f:o:")
     for opt, val in optlist:
-        if opt == "-t":
-            parse_type = PARSE_TRACKS
-        elif opt == "-r":
-            parse_type = PARSE_ROUTES
+        if opt == "-i":
+            if val.startswith("gpx"):
+                import in_gpx
+                input_func = in_gpx.parse
+            else:
+                sys.stderr.write("Invalid input.\n")
+                sys.exit(1)
+            if ":" in val:
+                input_options = val[val.index(":") + 1:]
         elif opt == "-f":
             if val.startswith("skip="):
                 skip = int(val[len("skip="):])
@@ -440,7 +363,7 @@ if __name__ == '__main__':
     paths = []
     for filename in args:
         with file(filename) as f:
-            paths.extend(parse_gpx(f, parse_type))
+            paths.extend(input_func(f, input_options))
 
     if filter_func is not None:
         paths = filter_func(paths)

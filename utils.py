@@ -1,4 +1,5 @@
 from math import sqrt, radians, sin, cos, tan, atan, atan2
+import re
 
 def distance(p1, p2):
     # taken from http://www.movable-type.co.uk/scripts/latlong-vincenty.html and translated into Python
@@ -56,3 +57,17 @@ def distance(p1, p2):
     delta_s = B * sin_s * (cos2_sm + B / 4 * (cos_s * (-1 + 2 * cos2_sm * cos2_sm) - B / 6 * cos2_sm * (-3 + 4 * sin_s * sin_s) * (-3 + 4 * cos2_sm * cos2_sm)))
 
     return b * A * (s - delta_s)
+
+LATLON_RE = re.compile(r"^([0-9]+\.[0-9]+)([NSEW])$")
+
+def parse_latlon(value):
+    try:
+        return float(value)
+    except ValueError:
+        match = LATLON_RE.match(value)
+        if match is not None:
+            value, direction = match.groups()
+            if direction in ("N", "E"):
+                return float(value)
+            elif direction in ("S", "W"):
+                return -float(value)
