@@ -60,6 +60,8 @@ def gen(paths, **__):
         sys.stdout.write("dist: %.2fkm\n" % (dist / 1000))
         if has_time:
             time = max_time - min_time
+            sys.stdout.write("start time: %s\n" % min_time)
+            sys.stdout.write("end time: %s\n" % max_time)
             sys.stdout.write("time: %s\n" % time)
             sys.stdout.write("avg speed: %.2fkm/h\n" % kmph(dist, toseconds(time)))
             sys.stdout.write("moving time: %s\n" % moving_time)
