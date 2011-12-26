@@ -3,8 +3,8 @@ import datetime
 
 import utils
 
-def parse(fileobj):
-    path = {'points': []}
+def parse(fileobj, transportation):
+    path = {'transportation': transportation, 'points': []}
 
     for line in fileobj:
         parts = [p.replace("\x00", "") for p in line.split(",")]

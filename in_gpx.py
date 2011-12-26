@@ -4,17 +4,9 @@ import xml.sax.handler
 
 import utils
 
-PARSE_TRACKS = 1
-PARSE_ROUTES = 2
-
 class GpxHandler(xml.sax.handler.ContentHandler):
-    def __init__(self, parse_type):
-        if parse_type == PARSE_TRACKS:
-            self.PATH_ELEMENT = "trk"
-            self.POINT_ELEMENT = "trkpt"
-        elif parse_type == PARSE_ROUTES:
-            self.PATH_ELEMENT = "rte"
-            self.POINT_ELEMENT = "rtept"
+    def __init__(self, transportation):
+        self.transportation = transportation
 
         self.xml_path = []
 
@@ -28,25 +20,27 @@ class GpxHandler(xml.sax.handler.ContentHandler):
     def startElement(self, name, attrs):
         self.xml_path.append(name)
 
-        if name == self.POINT_ELEMENT:
+        if name in ['trkpt', 'rtept']:
             self.point = {'lat': utils.parse_latlon(attrs['lat']), 'lon': utils.parse_latlon(attrs['lon']), 'name': ""}
-        elif name == self.PATH_ELEMENT:
-            self.path = {'points': []}
+        elif name in ['trk', 'rte']:
+            self.path = {'transportation': self.transportation, 'points': []}
 
     def characters(self, content):
-        if self.xml_path[-2:] == [self.PATH_ELEMENT, "name"]:
-            self.path['name'] = content.strip()
-        elif self.xml_path[-2:] == [self.POINT_ELEMENT, "name"]:
-            self.point['name'] = content.strip()
-        elif self.xml_path[-2:] == [self.POINT_ELEMENT, "ele"]:
+        tail = self.xml_path[-2:]
+
+        if tail == ['trkpt', 'ele'] or tail == ['rtept', 'ele']:
             self.point['ele'] = self.point.get('ele', "") + content
-        elif self.xml_path[-2:] == [self.POINT_ELEMENT, "time"]:
+        elif tail == ['trkpt', 'time'] or tail == ['rtept', 'time']:
             self.point['time'] = self.point.get('time', "") + content
+        elif tail == ['trkpt', 'name'] or tail == ['rtept', 'name']:
+            self.point['name'] = self.point.get('name', "") + content
+        elif tail == ['trk', 'name'] or tail == ['rte', 'name']:
+            self.path['name'] = self.path.get('name', "") + content
 
     def endElement(self, name):
         self.xml_path.pop()
 
-        if name == self.POINT_ELEMENT:
+        if name in ['trkpt', 'rtept']:
             if 'ele' in self.point:
                 self.point['ele'] = float(self.point['ele'].strip())
             if 'time' in self.point:
@@ -60,13 +54,17 @@ class GpxHandler(xml.sax.handler.ContentHandler):
                 if self.TIME_FORMAT is None:
                     raise Exception("Can't parse time.")
                 self.point['time'] = datetime.datetime.strptime(self.point['time'], self.TIME_FORMAT)
+            if 'name' in self.point:
+                self.point['name'] = self.point['name'].strip()
             self.path['points'].append(self.point)
             self.point = None
-        elif name == self.PATH_ELEMENT:
+        elif name in ['trk', 'rte']:
+            if 'name' in self.path:
+                self.path['name'] = self.path['name'].strip()
             self.paths.append(self.path)
             self.path = None
 
-def parse(fileobj):
-    handler = GpxHandler(PARSE_TRACKS)
+def parse(fileobj, transportation=None):
+    handler = GpxHandler(transportation)
     xml.sax.parse(fileobj, handler)
     return handler.paths

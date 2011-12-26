@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 from getopt import getopt
+import os
+import re
 import sys
 
 if __name__ == '__main__':
@@ -20,9 +22,12 @@ if __name__ == '__main__':
                 radius = int(val[len("name-match-radius="):])
                 filter_func = filters.name_match_filter(radius)
         elif opt == "-o":
-            if val.startswith("svg"):
+            if val.startswith("svg-map"):
                 import out_svg
-                output_func = out_svg.gen
+                output_func = out_svg.gen_map
+            elif val.startswith("svg-weighted"):
+                import out_svg
+                output_func = out_svg.gen_weighted
             elif val.startswith("kml"):
                 import out_kml
                 output_func = out_kml.gen
@@ -36,11 +41,9 @@ if __name__ == '__main__':
                 output_objects = val[val.index(":") + 1:].split(",")
                 output_options['output_path'] = "path" in output_objects
                 output_options['output_points'] = "points" in output_objects
-                if "no-background" in output_objects:
-                    output_options['output_background'] = False
 
     if output_func is None:
-        sys.stderr.write("Output not specified. Use -o (svg|kml)[:output_options]. output_options is an enumeration of path, points, no-background.\n")
+        sys.stderr.write("Output not specified. Use -o (svg-map|svg-weighted|kml)[:output_options]. output_options is an enumeration of path, points.\n")
         sys.exit(1)
 
     paths = []
@@ -56,9 +59,14 @@ if __name__ == '__main__':
             sys.exit(1)
 
         with file(filename) as f:
-            paths.extend(input_func(f))
+            sys.stderr.write("parsing %s...\n" % filename)
+            m = re.match(r".*(plane|train|bus|car|ferry|bike|walk).*", os.path.basename(filename))
+            transportation = m.group(1) if m else None
+            paths.extend(input_func(f, transportation=transportation))
 
     if filter_func is not None:
+        sys.stderr.write("filtering...\n")
         paths = filter_func(paths)
 
+    sys.stderr.write("generating output...\n")
     output_func(paths, **output_options)

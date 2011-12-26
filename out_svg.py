@@ -3,6 +3,8 @@ from itertools import izip
 import math
 import sys
 
+PATH_COLORS = {"plane": "rgb(200,0,0)", "train": "rgb(0,0,0)", "bus": "rgb(0,0,200)", "car": "rgb(0,0,200)", "ferry": "rgb(100,100,100)", "bike": "rgb(0,200,0)", "walk": "rgb(0,200,0)"}
+
 def minmax(l):
     min = max = None
     for e in l:
@@ -69,24 +71,87 @@ def osm_get_tiles(map_nw, map_se):
              'zoom': zoom, 'tile_x': tile_x + i, 'tile_y': tile_y + j}
             for i in xrange(tiles_x) for j in xrange(tiles_y)]
 
-def gen(paths, output_path, output_points, output_background=True):
-    map_nw = {}
-    map_se = {}
+def gen_map(paths, output_path, output_points):
+    map_nw = map_se = None
+
+    # need to go through all points once to determine map bounds
+    for path in paths:
+        for p in path['points']:
+            lat, lon = p['lat'], p['lon']
+
+            if map_nw is None and map_se is None:
+                map_nw = {'lat': lat, 'lon': lon}
+                map_se = {'lat': lat, 'lon': lon}
+            else:
+                map_nw['lat'] = max(map_nw['lat'], lat)
+                map_nw['lon'] = min(map_nw['lon'], lon)
+                map_se['lat'] = min(map_se['lat'], lat)
+                map_se['lon'] = max(map_se['lon'], lon)
+
+    if map_nw is None and map_se is None:
+        sys.stderr.write("Empty input!\n")
+        return
+
+    sys.stdout.write(SVG_START)
+
+    osm_tiles = osm_get_tiles(map_nw, map_se)
+
+    nw_tile = osm_tiles[0]
+    map_nw = osm_tile_nw(nw_tile['tile_x'], nw_tile['tile_y'], nw_tile['zoom'])
+    se_tile = osm_tiles[-1]
+    map_se = osm_tile_nw(se_tile['tile_x'] + 1, se_tile['tile_y'] + 1, se_tile['zoom'])
+
+    for tile in osm_tiles:
+        sys.stdout.write(SVG_BACKGROUND % tile)
+
+    min_x, min_y = latlon2xy(map_nw['lat'], map_nw['lon'])
+    max_x, max_y = latlon2xy(map_se['lat'], map_se['lon'])
+
+    for path in paths:
+        path_color = PATH_COLORS.get(path.get('transportation'), "rgb(0,0,0)")
+        point_color = "rgb(255,0,0)"
+
+        prev_x = prev_y = None
+
+        for p in path['points']:
+            lat, lon = p['lat'], p['lon']
+            x, y = latlon2xy(lat, lon)
+
+            if output_path and prev_x is not None and prev_y is not None:
+                params = {'x1': absolute(prev_x, SVG_WIDTH, min_x, max_x), 'y1': absolute(prev_y, SVG_HEIGHT, min_y, max_y),
+                          'x2': absolute(x, SVG_WIDTH, min_x, max_x), 'y2': absolute(y, SVG_HEIGHT, min_y, max_y),
+                          'c': path_color}
+                sys.stdout.write("<line x1=\"%(x1)s\" y1=\"%(y1)s\" x2=\"%(x2)s\" y2=\"%(y2)s\" style=\"stroke:%(c)s;stroke-width:1;\" />\n" % params)
+
+            if output_points:
+                params = {'x': absolute(x, SVG_WIDTH, min_x, max_x), 'y': absolute(y, SVG_HEIGHT, min_y, max_y), 'c': point_color}
+                sys.stdout.write("<circle cx=\"%(x)s\" cy=\"%(y)s\" r=\"1\" fill=\"%(c)s\" />\n" % params)
+
+            prev_x, prev_y = x, y
+
+    sys.stdout.write(SVG_END)
+
+def gen_weighted(paths, output_path, output_points):
+    map_nw = map_se = None
 
     # all segments and points with associated weight
     segments = defaultdict(int)
     points = defaultdict(int)
 
+    # go through all points to compute point/segment weight
     for path in paths:
         svg_path = []
         for p in path['points']:
             lat, lon = p['lat'], p['lon']
 
-            map_nw['lat'] = max(map_nw.get('lat', lat), lat)
-            map_nw['lon'] = min(map_nw.get('lon', lon), lon)
-
-            map_se['lat'] = min(map_se.get('lat', lat), lat)
-            map_se['lon'] = max(map_se.get('lon', lon), lon)
+            if map_nw is None and map_se is None:
+                map_nw = {'lat': lat, 'lon': lon}
+                map_se = {'lat': lat, 'lon': lon}
+            else:
+                map_nw['lat'] = max(map_nw['lat'], lat)
+                map_nw['lon'] = min(map_nw['lon'], lon)
+                map_se['lat'] = min(map_se['lat'], lat)
+                map_se['lon'] = max(map_se['lon'], lon)
 
             svg_point = latlon2xy(lat, lon)
             svg_path.append(svg_point)
@@ -98,18 +163,11 @@ def gen(paths, output_path, output_points, output_background=True):
             for (x1, y1), (x2, y2) in izip(svg_path, svg_path[1:]):
                 segments[(x1, y1, x2, y2)] += 1
 
+    if map_nw is None and map_se is None:
+        sys.stderr.write("Empty input!\n")
+        return
+
     sys.stdout.write(SVG_START)
-
-    if output_background:
-        osm_tiles = osm_get_tiles(map_nw, map_se)
-
-        nw_tile = osm_tiles[0]
-        map_nw = osm_tile_nw(nw_tile['tile_x'], nw_tile['tile_y'], nw_tile['zoom'])
-        se_tile = osm_tiles[-1]
-        map_se = osm_tile_nw(se_tile['tile_x'] + 1, se_tile['tile_y'] + 1, se_tile['zoom'])
-
-        for tile in osm_tiles:
-            sys.stdout.write(SVG_BACKGROUND % tile)
 
     min_x, min_y = latlon2xy(map_nw['lat'], map_nw['lon'])
     max_x, max_y = latlon2xy(map_se['lat'], map_se['lon'])
@@ -118,7 +176,7 @@ def gen(paths, output_path, output_points, output_background=True):
         min_weight, max_weight = minmax(segments.itervalues())
 
         for (x1, y1, x2, y2), weight in sorted(segments.iteritems(), key=lambda (s, w): w):
-            if output_background or min_weight == max_weight:
+            if min_weight == max_weight:
                 color = "rgb(0,0,0)"
             else:
                 color = "hsl(240,%s%%,%s%%)" % (10 + absolute(weight, 80, min_weight, max_weight), 80 - absolute(weight, 70, min_weight, max_weight))
@@ -131,7 +189,7 @@ def gen(paths, output_path, output_points, output_background=True):
         min_weight, max_weight = minmax(points.itervalues())
 
         for (x, y), weight in sorted(points.iteritems(), key=lambda (p, w): w):
-            if output_background or min_weight == max_weight:
+            if min_weight == max_weight:
                 color = "rgb(255,0,0)"
             else:
                 color = "hsl(0,%s%%,%s%%)" % (10 + absolute(weight, 80, min_weight, max_weight), 80 - absolute(weight, 70, min_weight, max_weight))
