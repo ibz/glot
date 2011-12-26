@@ -4,29 +4,14 @@ from getopt import getopt
 import sys
 
 if __name__ == '__main__':
-    input_func = None
-    input_options = ""
-
     filter_func = None
 
     output_func = None
     output_options = {'output_path': True, 'output_points': False}
 
-    optlist, args = getopt(sys.argv[1:], "i:f:o:")
+    optlist, args = getopt(sys.argv[1:], "f:o:")
     for opt, val in optlist:
-        if opt == "-i":
-            if val.startswith("gpx"):
-                import in_gpx
-                input_func = in_gpx.parse
-            elif val.startswith("columbus"):
-                import in_columbus
-                input_func = in_columbus.parse
-            else:
-                sys.stderr.write("Invalid input.\n")
-                sys.exit(1)
-            if ":" in val:
-                input_options = val[val.index(":") + 1:]
-        elif opt == "-f":
+        if opt == "-f":
             import filters
             if val.startswith("skip="):
                 skip = int(val[len("skip="):])
@@ -54,18 +39,24 @@ if __name__ == '__main__':
                 if "no-background" in output_objects:
                     output_options['output_background'] = False
 
-    if input_func is None:
-        sys.stderr.write("Input not specified. Use -i (gpx|columbus)[:input_options].\n")
-        sys.exit(1)
-
     if output_func is None:
         sys.stderr.write("Output not specified. Use -o (svg|kml)[:output_options]. output_options is an enumeration of path, points, no-background.\n")
         sys.exit(1)
 
     paths = []
     for filename in args:
+        if filename.endswith(".gpx"):
+            import in_gpx
+            input_func = in_gpx.parse
+        elif filename.endswith(".CSV"):
+            import in_columbus
+            input_func = in_columbus.parse
+        else:
+            sys.stderr.write("Can't guess file type from extension.")
+            sys.exit(1)
+
         with file(filename) as f:
-            paths.extend(input_func(f, input_options))
+            paths.extend(input_func(f))
 
     if filter_func is not None:
         paths = filter_func(paths)

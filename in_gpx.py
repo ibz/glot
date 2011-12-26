@@ -66,14 +66,7 @@ class GpxHandler(xml.sax.handler.ContentHandler):
             self.paths.append(self.path)
             self.path = None
 
-def parse(fileobj, opts):
-    if opts == "" or opts == "trk":
-        parse_type = PARSE_TRACKS
-    elif opts == "rte":
-        parse_type = PARSE_ROUTES
-    else:
-        raise ValueError("Invalid input options.")
-
-    handler = GpxHandler(parse_type)
+def parse(fileobj):
+    handler = GpxHandler(PARSE_TRACKS)
     xml.sax.parse(fileobj, handler)
     return handler.paths

@@ -3,9 +3,7 @@ import datetime
 
 import utils
 
-def parse(fileobj, opts):
-    assert opts == ""
-
+def parse(fileobj):
     path = {'points': []}
 
     for line in fileobj:
