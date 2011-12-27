@@ -8,7 +8,10 @@ def toseconds(t):
     return t.days * 24 * 3600 + t.seconds
 
 def kmph(m, s):
-    return m / s * 3600 / 1000
+    try:
+        return m / s * 3600 / 1000
+    except ZeroDivisionError:
+        return 0
 
 def gen(paths, **__):
     total_dist = 0
