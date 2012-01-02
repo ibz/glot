@@ -29,8 +29,13 @@ def gen(paths, output_path, output_points):
         if output_points:
             sys.stdout.write("<Folder><name>Points</name>\n")
             for point in path['points']:
-                sys.stdout.write(("<Placemark><name>%(name)s</name><styleUrl>#track</styleUrl><Point><coordinates>%(lon)s,%(lat)s</coordinates></Point></Placemark>\n"
-                                  % {'name': point.get('name', ""), 'lon': point['lon'], 'lat': point['lat']}).encode("utf-8"))
+                name = point.get('name', "")
+                coordinates = "%(lon)s,%(lat)s" % point
+                if 'ele' in point:
+                    coordinates = "%s,%s" % (coordinates, point['ele'])
+                timestamp = "<TimeStamp><when>%s</when></TimeStamp>" % point['time'].strftime("%Y-%m-%dT%H:%M:%SZ") if 'time' in point else ""
+                sys.stdout.write(("<Placemark><name>%s</name><styleUrl>#track</styleUrl><Point><coordinates>%s</coordinates></Point>%s</Placemark>\n"
+                                  % (name, coordinates, timestamp)).encode("utf-8"))
             sys.stdout.write("</Folder>\n")
         if output_path:
             sys.stdout.write("<Placemark><name>Path</name><styleUrl>#line</styleUrl><LineString><tessellate>1</tessellate><coordinates>\n")
