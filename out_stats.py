@@ -1,3 +1,4 @@
+from collections import defaultdict
 import datetime
 import math
 import sys
@@ -15,6 +16,7 @@ def kmph(m, s):
 
 def gen(paths, **__):
     total_dist = 0
+    total_dist_transportation = defaultdict(int)
     total_moving_time = datetime.timedelta(0)
 
     for path in paths:
@@ -76,9 +78,12 @@ def gen(paths, **__):
         sys.stdout.write("\n")
 
         total_dist += dist
+        total_dist_transportation[path.get('transportation')] += dist
         total_moving_time += moving_time
 
     sys.stdout.write("\n")
+    for t, d in sorted(total_dist_transportation.iteritems()):
+        sys.stdout.write("TOTAL dist %s: %.2fkm\n" % (t, d / 1000))
     sys.stdout.write("TOTAL dist: %.2fkm\n" % (total_dist / 1000))
     sys.stdout.write("TOTAL moving time: %s\n" % total_moving_time)
     sys.stdout.write("avg speed when moving: %.2fkm/h\n" % kmph(total_dist, toseconds(total_moving_time)))
