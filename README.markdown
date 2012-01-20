@@ -1,6 +1,6 @@
 ## usage
 
-    ./gpsview.py [-f <filter>] -o <output>[:output-options] input1 ... > output
+    ./glot.py [-f <filter>] -o <output>[:output-options] input1 ... > output
 
 ## output
 
