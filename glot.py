@@ -5,8 +5,10 @@ import os
 import re
 import sys
 
+import filters
+
 if __name__ == '__main__':
-    filter_func = None
+    filter_funcs = [filters.discard_stopped_filter]
 
     output_func = None
     output_options = {}
@@ -14,13 +16,12 @@ if __name__ == '__main__':
     optlist, args = getopt(sys.argv[1:], "f:o:")
     for opt, val in optlist:
         if opt == "-f":
-            import filters
             if val.startswith("skip="):
                 skip = int(val[len("skip="):])
-                filter_func = filters.skip_filter(skip)
+                filter_funcs.append(filters.skip_filter(skip))
             elif val.startswith("name-match-radius="):
                 radius = int(val[len("name-match-radius="):])
-                filter_func = filters.name_match_filter(radius)
+                filter_funcs.append(filters.name_match_filter(radius))
         elif opt == "-o":
             if val.startswith("svg-map"):
                 import out_svg
@@ -67,8 +68,8 @@ if __name__ == '__main__':
             transportation = m.group(1) if m else None
             paths.extend(input_func(f, transportation=transportation))
 
-    if filter_func is not None:
-        sys.stderr.write("filtering...\n")
+    sys.stderr.write("filtering...\n")
+    for filter_func in filter_funcs:
         paths = filter_func(paths)
 
     sys.stderr.write("generating output...\n")
