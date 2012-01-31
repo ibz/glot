@@ -9,7 +9,7 @@ if __name__ == '__main__':
     filter_func = None
 
     output_func = None
-    output_options = {'output_path': True, 'output_points': False}
+    output_options = {}
 
     optlist, args = getopt(sys.argv[1:], "f:o:")
     for opt, val in optlist:
@@ -28,6 +28,9 @@ if __name__ == '__main__':
             elif val.startswith("svg-weighted"):
                 import out_svg
                 output_func = out_svg.gen_weighted
+            elif val.startswith("plot-elevation"):
+                import out_plot
+                output_func = out_plot.gen_elevation
             elif val.startswith("kml"):
                 import out_kml
                 output_func = out_kml.gen

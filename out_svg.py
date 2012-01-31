@@ -71,7 +71,7 @@ def osm_get_tiles(map_nw, map_se):
              'zoom': zoom, 'tile_x': tile_x + i, 'tile_y': tile_y + j}
             for i in xrange(tiles_x) for j in xrange(tiles_y)]
 
-def gen_map(paths, output_path, output_points):
+def gen_map(paths, output_path=True, output_points=False):
     map_nw = map_se = None
 
     # need to go through all points once to determine map bounds
@@ -131,7 +131,7 @@ def gen_map(paths, output_path, output_points):
 
     sys.stdout.write(SVG_END)
 
-def gen_weighted(paths, output_path, output_points):
+def gen_weighted(paths, output_path=True, output_points=False):
     map_nw = map_se = None
 
     # all segments and points with associated weight

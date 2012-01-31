@@ -21,7 +21,7 @@ KML_START = """<?xml version="1.0" encoding="UTF-8" ?>
 
 KML_END = "</Document></kml>"
 
-def gen(paths, output_path, output_points):
+def gen(paths, output_path=True, output_points=False):
     sys.stdout.write(KML_START)
     sys.stdout.write("<Folder><name>Tracks</name>\n")
     for i, path in enumerate(paths, 1):

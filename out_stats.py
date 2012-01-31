@@ -14,7 +14,7 @@ def kmph(m, s):
     except ZeroDivisionError:
         return 0
 
-def gen(paths, **__):
+def gen(paths):
     total_dist = 0
     total_dist_transportation = defaultdict(int)
     total_moving_time = datetime.timedelta(0)
