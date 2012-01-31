@@ -21,6 +21,17 @@ def find_closest_point(points, point):
             closest_point = p
     return closest_point
 
+def discard_stopped_filter(paths):
+    for path in paths:
+        i = 1
+        while i < len(path['points']) - 1:
+            p1, p2 = path['points'][i-1:i+1]
+            if p1['lat'] == p2['lat'] and p1['lon'] == p2['lon'] and p1['ele'] == p2['ele'] and p1['name'] == p2['name']:
+                path['points'].pop(i)
+            else:
+                i += 1
+    return paths
+
 def skip_filter(skip):
     def _filter(paths):
         for path in paths:
