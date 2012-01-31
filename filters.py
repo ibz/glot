@@ -30,14 +30,12 @@ def discard_stopped_filter(paths):
                 path['points'].pop(i)
             else:
                 i += 1
-    return paths
 
 def skip_filter(skip):
     def _filter(paths):
         for path in paths:
             keep = lambda i: i == 0 or i % skip == 0 or i == len(path['points']) - 1
             path['points'] = [p for i, p in enumerate(path['points']) if keep(i)]
-        return paths
     return _filter
 
 def name_match_filter(radius):
@@ -75,7 +73,5 @@ def name_match_filter(radius):
                 group_coords = find_closest_point(all_group_coords[point['name']], point)
                 point['lat'] = group_coords['lat']
                 point['lon'] = group_coords['lon']
-
-        return paths
 
     return _filter

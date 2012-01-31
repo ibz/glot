@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     sys.stderr.write("filtering...\n")
     for filter_func in filter_funcs:
-        paths = filter_func(paths)
+        filter_func(paths)
 
     sys.stderr.write("generating output...\n")
     output_func(paths, **output_options)
