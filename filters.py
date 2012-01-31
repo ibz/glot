@@ -22,6 +22,9 @@ def find_closest_point(points, point):
     return closest_point
 
 def discard_stopped_filter(paths):
+    """Discard all consecutive points with the same coordinates (which means the vechicle was stopped) and that have the same name.
+    Should not have any effect on the output, except of slightly reducing the size."""
+
     for path in paths:
         i = 1
         while i < len(path['points']) - 1:
@@ -32,6 +35,10 @@ def discard_stopped_filter(paths):
                 i += 1
 
 def skip_filter(skip):
+    """Only keep one in every <skip> points.
+    Useful to considerably reduce the size of output, but with loss of accuracy.
+    """
+
     def _filter(paths):
         for path in paths:
             keep = lambda i: i == 0 or i % skip == 0 or i == len(path['points']) - 1
@@ -39,6 +46,10 @@ def skip_filter(skip):
     return _filter
 
 def name_match_filter(radius):
+    """Considers all points within <radius> meters distance from each other and that have the same name to be the same point.
+    It will modify the coordinates of all such points to their average.
+    """
+
     def find_group(groups, point):
         for group in groups:
             if find_nearby_point(group, point, radius) is not None:
