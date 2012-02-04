@@ -29,7 +29,7 @@ def discard_stopped_filter(paths):
         i = 1
         while i < len(path['points']) - 1:
             p1, p2 = path['points'][i-1:i+1]
-            if p1['lat'] == p2['lat'] and p1['lon'] == p2['lon'] and p1['ele'] == p2['ele'] and p1['name'] == p2['name']:
+            if p1['lat'] == p2['lat'] and p1['lon'] == p2['lon'] and p1.get('ele') == p2.get('ele') and p1.get('name') == p2.get('name'):
                 path['points'].pop(i)
             else:
                 i += 1
