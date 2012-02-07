@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
         with file(filename) as f:
             sys.stderr.write("parsing %s...\n" % filename)
-            m = re.match(r".*(plane|train|bus|car|ferry|bike|walk).*", os.path.basename(filename))
+            m = re.match(r".*(plane|train|bus|car|motorcycle|ferry|bike|walk).*", os.path.basename(filename))
             transportation = m.group(1) if m else None
             paths.extend(input_func(f, transportation=transportation))
 

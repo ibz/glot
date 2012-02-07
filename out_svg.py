@@ -3,7 +3,7 @@ from itertools import izip
 import math
 import sys
 
-PATH_COLORS = {"plane": "rgb(200,0,0)", "train": "rgb(0,0,0)", "bus": "rgb(0,0,200)", "car": "rgb(0,0,200)", "ferry": "rgb(100,100,100)", "bike": "rgb(0,200,0)", "walk": "rgb(0,200,0)"}
+PATH_COLORS = {"plane": "rgb(200,0,0)", "train": "rgb(0,0,0)", "bus": "rgb(0,0,200)", "car": "rgb(0,0,200)", "motorcycle": "rgb(0,0,200)", "ferry": "rgb(100,100,100)", "bike": "rgb(0,200,0)", "walk": "rgb(0,200,0)"}
 
 def minmax(l):
     min = max = None
