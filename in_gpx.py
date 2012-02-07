@@ -45,7 +45,7 @@ class GpxHandler(xml.sax.handler.ContentHandler):
                 self.point['ele'] = float(self.point['ele'].strip())
             if 'time' in self.point:
                 if self.TIME_FORMAT is None:
-                    for time_format in ["%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%SZ"]:
+                    for time_format in ["%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S"]:
                         try:
                             datetime.datetime.strptime(self.point['time'], time_format)
                             self.TIME_FORMAT = time_format
