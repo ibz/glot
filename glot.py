@@ -26,25 +26,37 @@ if __name__ == '__main__':
             if val.startswith("svg-map"):
                 import out_svg
                 output_func = out_svg.gen_map
+                if ":" in val:
+                    output_objects = val[val.index(":") + 1:].split(",")
+                    output_options['output_path'] = "path" in output_objects
+                    output_options['output_points'] = "points" in output_objects
             elif val.startswith("svg-weighted"):
                 import out_svg
                 output_func = out_svg.gen_weighted
-            elif val.startswith("plot-elevation"):
+                if ":" in val:
+                    output_objects = val[val.index(":") + 1:].split(",")
+                    output_options['output_path'] = "path" in output_objects
+                    output_options['output_points'] = "points" in output_objects
+            elif val.startswith("plot"):
                 import out_plot
-                output_func = out_plot.gen_elevation
+                output_func = out_plot.gen
+                if ":" in val:
+                    output_objects = val[val.index(":") + 1:].split(",")
+                    output_options['elevation'] = "elevation" in output_objects
+                    output_options['speed'] = "speed" in output_objects
             elif val.startswith("kml"):
                 import out_kml
                 output_func = out_kml.gen
+                if ":" in val:
+                    output_objects = val[val.index(":") + 1:].split(",")
+                    output_options['output_path'] = "path" in output_objects
+                    output_options['output_points'] = "points" in output_objects
             elif val.startswith("stats"):
                 import out_stats
                 output_func = out_stats.gen
             else:
                 sys.stderr.write("Invalid output.\n")
                 sys.exit(1)
-            if ":" in val:
-                output_objects = val[val.index(":") + 1:].split(",")
-                output_options['output_path'] = "path" in output_objects
-                output_options['output_points'] = "points" in output_objects
 
     if output_func is None:
         sys.stderr.write("Output not specified. Use -o (svg-map|svg-weighted|kml)[:output_options]. output_options is an enumeration of path, points.\n")
