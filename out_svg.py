@@ -43,9 +43,9 @@ SVG_WIDTH = 1024
 SVG_HEIGHT = 1024
 
 def osm_get_tile(p, zoom):
-    lat = math.radians(p.lat)
+    lat = math.radians(p['lat'])
     n = 2.0 ** zoom
-    tile_x = int((p.lon + 180.0) / 360.0 * n)
+    tile_x = int((p['lon'] + 180.0) / 360.0 * n)
     tile_y = int((1.0 - math.log(math.tan(lat) + (1 / math.cos(lat))) / math.pi) / 2.0 * n)
     return (tile_x, tile_y)
 
