@@ -19,7 +19,10 @@ def gen(paths, elevation, speed):
         for p in path['points']:
             if prev_p is not None:
                 d = float(distance(p, prev_p))
-                s = d / (p.time - prev_p.time).seconds
+                try:
+                    s = d / (p.time - prev_p.time).seconds
+                except ZeroDivisionError:
+                    s = 0
 
                 total_dist += d / 1000
             else:
