@@ -29,11 +29,11 @@ def gen(paths, output_path=True, output_points=False):
         if output_points:
             sys.stdout.write("<Folder><name>Points</name>\n")
             for point in path['points']:
-                name = point.get('name', "")
+                name = point.name or ""
                 coordinates = "%(lon)s,%(lat)s" % point
-                if 'ele' in point:
-                    coordinates = "%s,%s" % (coordinates, point['ele'])
-                timestamp = "<TimeStamp><when>%s</when></TimeStamp>" % point['time'].strftime("%Y-%m-%dT%H:%M:%SZ") if 'time' in point else ""
+                if point.ele is not None:
+                    coordinates = "%s,%s" % (coordinates, point.ele)
+                timestamp = "<TimeStamp><when>%s</when></TimeStamp>" % point.time.strftime("%Y-%m-%dT%H:%M:%SZ") if point.time else ""
                 sys.stdout.write(("<Placemark><name>%s</name><styleUrl>#track</styleUrl><Point><coordinates>%s</coordinates></Point>%s</Placemark>\n"
                                   % (name, coordinates, timestamp)).encode("utf-8"))
             sys.stdout.write("</Folder>\n")

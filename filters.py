@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from utils import distance
+from utils import distance, Point
 
 def avg(l):
     return sum(l) / len(l)
@@ -29,7 +29,7 @@ def discard_stopped_filter(paths):
         i = 1
         while i < len(path['points']) - 1:
             p1, p2 = path['points'][i-1:i+1]
-            if p1['lat'] == p2['lat'] and p1['lon'] == p2['lon'] and p1.get('ele') == p2.get('ele') and p1.get('name') == p2.get('name'):
+            if p1.lat == p2.lat and p1.lon == p2.lon and p1.ele == p2.ele and p1.name == p2.name:
                 path['points'].pop(i)
             else:
                 i += 1
@@ -71,18 +71,19 @@ def name_match_filter(radius):
 
         for path in paths:
             for point in path['points']:
-                all_points[point['name']].append(point)
+                all_points[point.name].append(point)
 
         all_points_grouped = dict((name, group_points(points)) for name, points in all_points.iteritems())
 
         all_group_coords = {}
         for name, groups in all_points_grouped.iteritems():
-            all_group_coords[name] = [{'lat': avg([p['lat'] for p in group]), 'lon': avg([p['lon'] for p in group])} for group in groups]
+            all_group_coords[name] = [{'lat': avg([p.lat for p in group]), 'lon': avg([p.lon for p in group])} for group in groups]
 
         for path in paths:
-            for point in path['points']:
-                group_coords = find_closest_point(all_group_coords[point['name']], point)
-                point['lat'] = group_coords['lat']
-                point['lon'] = group_coords['lon']
+            for i in range(len(path['points'])):
+                point = path['points'][i]
+                group_coords = find_closest_point(all_group_coords[point.name], point)
+                new_point = Point(group_coords['lat'], group_coords['lon'], point.ele, point.time, point.name)
+                path['points'][i] = new_point
 
     return _filter

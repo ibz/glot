@@ -21,7 +21,7 @@ class GpxHandler(xml.sax.handler.ContentHandler):
         self.xml_path.append(name)
 
         if name in ['trkpt', 'rtept']:
-            self.point = {'lat': utils.parse_latlon(attrs['lat']), 'lon': utils.parse_latlon(attrs['lon']), 'name': ""}
+            self.point = {'lat': utils.parse_latlon(attrs['lat']), 'lon': utils.parse_latlon(attrs['lon'])}
         elif name in ['trk', 'rte']:
             self.path = {'transportation': self.transportation, 'points': []}
 
@@ -56,7 +56,7 @@ class GpxHandler(xml.sax.handler.ContentHandler):
                 self.point['time'] = datetime.datetime.strptime(self.point['time'], self.TIME_FORMAT)
             if 'name' in self.point:
                 self.point['name'] = self.point['name'].strip()
-            self.path['points'].append(self.point)
+            self.path['points'].append(utils.Point(self.point['lat'], self.point['lon'], self.point.get('ele'), self.point.get('time'), self.point.get('name')))
             self.point = None
         elif name in ['trk', 'rte']:
             if 'name' in self.path:

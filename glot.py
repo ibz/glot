@@ -59,7 +59,7 @@ if __name__ == '__main__':
             import in_columbus
             input_func = in_columbus.parse
         else:
-            sys.stderr.write("Can't guess file type from extension.\n")
+            sys.stderr.write("Can't guess file type from extension. filename: %s\n" % filename)
             sys.exit(1)
 
         with file(filename) as f:

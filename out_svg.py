@@ -43,9 +43,9 @@ SVG_WIDTH = 1024
 SVG_HEIGHT = 1024
 
 def osm_get_tile(p, zoom):
-    lat = math.radians(p['lat'])
+    lat = math.radians(p.lat)
     n = 2.0 ** zoom
-    tile_x = int((p['lon'] + 180.0) / 360.0 * n)
+    tile_x = int((p.lon + 180.0) / 360.0 * n)
     tile_y = int((1.0 - math.log(math.tan(lat) + (1 / math.cos(lat))) / math.pi) / 2.0 * n)
     return (tile_x, tile_y)
 
@@ -77,7 +77,7 @@ def gen_map(paths, output_path=True, output_points=False):
     # need to go through all points once to determine map bounds
     for path in paths:
         for p in path['points']:
-            lat, lon = p['lat'], p['lon']
+            lat, lon = p.lat, p.lon
 
             if map_nw is None and map_se is None:
                 map_nw = {'lat': lat, 'lon': lon}
@@ -114,7 +114,7 @@ def gen_map(paths, output_path=True, output_points=False):
         prev_x = prev_y = None
 
         for p in path['points']:
-            lat, lon = p['lat'], p['lon']
+            lat, lon = p.lat, p.lon
             x, y = latlon2xy(lat, lon)
 
             if output_path and prev_x is not None and prev_y is not None:
@@ -142,7 +142,7 @@ def gen_weighted(paths, output_path=True, output_points=False):
     for path in paths:
         svg_path = []
         for p in path['points']:
-            lat, lon = p['lat'], p['lon']
+            lat, lon = p.lat, p.lon
 
             if map_nw is None and map_se is None:
                 map_nw = {'lat': lat, 'lon': lon}

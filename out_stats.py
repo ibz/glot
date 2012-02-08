@@ -21,8 +21,8 @@ def gen(paths):
 
     for path in paths:
         point_count = len(path['points'])
-        has_ele = 'ele' in path['points'][0]
-        has_time = 'time' in path['points'][0]
+        has_ele = path['points'][0].ele is not None
+        has_time = path['points'][0].time is not None
 
         dist = 0
 
@@ -40,26 +40,26 @@ def gen(paths):
 
             if has_ele:
                 if min_ele is None and max_ele is None:
-                    min_ele = max_ele = p['ele']
+                    min_ele = max_ele = p.ele
                 else:
-                    min_ele = min(min_ele, p['ele'])
-                    max_ele = max(max_ele, p['ele'])
-                ele_sum += p['ele']
+                    min_ele = min(min_ele, p.ele)
+                    max_ele = max(max_ele, p.ele)
+                ele_sum += p.ele
             if has_time:
                 if min_time is None and max_time is None:
-                    min_time = max_time = p['time']
+                    min_time = max_time = p.time
                 else:
-                    min_time = min(min_time, p['time'])
-                    max_time = max(max_time, p['time'])
+                    min_time = min(min_time, p.time)
+                    max_time = max(max_time, p.time)
                 if d != 0:
-                    moving_time += p['time'] - prev_p['time']
+                    moving_time += p.time - prev_p.time
                 if d == 0 and prev_p is not None:
-                    stopped_time += p['time'] - prev_p['time']
+                    stopped_time += p.time - prev_p.time
             prev_p = p
 
         avg_ele = ele_sum / point_count
 
-        ele_stdd = math.sqrt(sum((avg_ele - p['ele']) ** 2 for p in path['points']) / point_count) if has_ele else 0
+        ele_stdd = math.sqrt(sum((avg_ele - p.ele) ** 2 for p in path['points']) / point_count) if has_ele else 0
 
         sys.stdout.write("points: %s, has elevation: %s, has time: %s\n" % (point_count, has_ele, has_time))
         sys.stdout.write("dist: %.2fkm\n" % (dist / 1000))

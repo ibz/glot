@@ -1,5 +1,8 @@
+from collections import namedtuple
 from math import sqrt, radians, sin, cos, tan, atan, atan2
 import re
+
+Point = namedtuple('Point', "lat lon ele time name")
 
 def distance(p1, p2):
     # taken from http://www.movable-type.co.uk/scripts/latlong-vincenty.html and translated into Python
@@ -8,9 +11,9 @@ def distance(p1, p2):
     b = 6356752.314245
     f = 1 / 298.257223563
 
-    L = radians(p2['lon'] - p1['lon'])
-    U1 = atan((1 - f) * tan(radians(p1['lat'])))
-    U2 = atan((1 - f) * tan(radians(p2['lat'])))
+    L = radians(p2.lon - p1.lon)
+    U1 = atan((1 - f) * tan(radians(p1.lat)))
+    U2 = atan((1 - f) * tan(radians(p2.lat)))
 
     sin_U1 = sin(U1)
     cos_U1 = cos(U1)
