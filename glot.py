@@ -43,9 +43,10 @@ if __name__ == '__main__':
                 if ":" in val:
                     params = val[val.index(":") + 1:]
                     if "-" not in params:
-                        sys.stderr.write("please pass <xaxis>-<yaxis>[,...]\n.")
+                        sys.stderr.write("please pass <xaxis>-<yaxis>[,...][-avg=<n>]\n.")
                         sys.exit(1)
-                    xaxis, yaxis = params.split("-")
+                    params = params.split("-")
+                    xaxis, yaxis = params[0:2]
                     if xaxis not in ['time', 'distance']:
                         sys.stderr.write("xaxis must be time or distance.\n")
                         sys.exit(1)
@@ -54,8 +55,13 @@ if __name__ == '__main__':
                         if y not in ['speed', 'elevation']:
                             sys.stderr.write("yaxis must be an enumeration of speed and elevation.\n")
                             sys.exit(1)
+                    if len(params) == 3:
+                        avg_window = int(params[2].split("=")[1])
+                    else:
+                        avg_window = None
                     output_options['xaxis'] = xaxis
                     output_options['yaxis'] = yaxis
+                    output_options['avg_window'] = avg_window
             elif val.startswith("kml"):
                 import out_kml
                 output_func = out_kml.gen

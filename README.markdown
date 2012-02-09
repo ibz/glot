@@ -6,7 +6,7 @@
 
 - `svg-map[:<what>]` renders the input data to SVG and adds a OSM map as a background. you can use this to generate maps like [this](http://instagr.am/p/ThPim/) (this was me crossing Korea by bicycle, BTW).
 - `svg-weighted[:<what>]` renders the input data to SVG without adding a map background and colors the segments based on how many times they appear in the input data. you can create some pretty nice stuff with this. examples to come.
-- `plot:<xaxis>-<yaxis>` plots the elevation and/or speed against distance or time in PNG format. `<xaxis>` is either `distance` or `time`, `<yaxis>` is either `speed` or `elevation` or both, separated by comma.
+- `plot:<xaxis>-<yaxis>[-avg=n]` plots the elevation and/or speed against distance or time in PNG format. `<xaxis>` is either `distance` or `time`, `<yaxis>` is either `speed` or `elevation` or both, separated by comma. optionally, appending `-avg=n`, where n is a number, will use a moving average with a window of n on each side for the data on the y axis.
 - `kml[:<what>]` generates a KML, to be opened in Google Earth.
 - `stats` prints some stats about the input file.
 

@@ -13,7 +13,15 @@ def hours_between(t1, t2):
     delta = t2 - t1
     return delta.days * 24 + float(delta.seconds) / 3600
 
-def gen(paths, xaxis, yaxis):
+def moving_avg(l, window):
+    avgs = []
+    for i in range(len(l)):
+        slice = l[max(i - window, 0) : min(i + window + 1, len(l))]
+        avg = float(sum(slice)) / len(slice)
+        avgs.append(avg)
+    return avgs
+
+def gen(paths, xaxis, yaxis, avg_window):
     xes = []
 
     eles = []
@@ -51,9 +59,13 @@ def gen(paths, xaxis, yaxis):
             prev_p = p
 
     lines = []
-    if 'elevation' in yaxis:        
+    if 'elevation' in yaxis:
+        if avg_window is not None:
+            eles = moving_avg(eles, avg_window)
         lines.append((eles, "elevation (m)"))
     if 'speed' in yaxis:
+        if avg_window is not None:
+            speeds = moving_avg(speeds, avg_window)
         lines.append((speeds, "speed (km/h)"))
 
     figure = pylab.figure()
