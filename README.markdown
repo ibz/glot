@@ -4,10 +4,10 @@
 
 ## output
 
-- "svg-map[:<what>]" renders the input data to SVG and adds a OSM map as a background. you can use this to generate maps like [this](http://instagr.am/p/ThPim/) (this was me crossing Korea by bicycle, BTW).
-- "svg-weighted[:<what>]" renders the input data to SVG without adding a map background and colors the segments based on how many times they appear in the input data. you can create some pretty nice stuff with this. examples to come.
-- "plot:<xaxis>-<yaxis>" plots the elevation and/or speed against distance or time in PNG format. <xaxis> is either *distance* or *time*, <yaxis> is either *speed* or *elevation* or both, separated by comma.
-- "kml[:<what>]" generates a KML, to be opened in Google Earth.
+- `svg-map[:<what>]` renders the input data to SVG and adds a OSM map as a background. you can use this to generate maps like [this](http://instagr.am/p/ThPim/) (this was me crossing Korea by bicycle, BTW).
+- `svg-weighted[:<what>]` renders the input data to SVG without adding a map background and colors the segments based on how many times they appear in the input data. you can create some pretty nice stuff with this. examples to come.
+- `plot:<xaxis>-<yaxis>` plots the elevation and/or speed against distance or time in PNG format. `<xaxis>` is either `distance` or `time`, `<yaxis>` is either `speed` or `elevation` or both, separated by comma.
+- `kml[:<what>]` generates a KML, to be opened in Google Earth.
 - "stats" prints some stats about the input file.
 
 output options: "svg-map", "svg-weighted" and "kml" outputs all support rendering the path, the points or both. default is path, for others use the following syntax: "svg-map:points" or "svg-map:path,points".
