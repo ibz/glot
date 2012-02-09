@@ -5,9 +5,9 @@ matplotlib.use('agg')
 
 import pylab
 
-pylab.grid(True)
-
 from utils import distance
+
+COLORS = ["blue", "green", "red"]
 
 def hours_between(t1, t2):
     delta = t2 - t1
@@ -50,11 +50,25 @@ def gen(paths, xaxis, yaxis):
 
             prev_p = p
 
+    lines = []
     if 'elevation' in yaxis:        
-        pylab.plot(xes, eles, label="elevation")
+        lines.append((eles, "elevation (m)"))
     if 'speed' in yaxis:
-        pylab.plot(xes, speeds, label="speed")
+        lines.append((speeds, "speed (km/h)"))
 
-    pylab.legend()
+    figure = pylab.figure()
+    ax = None
+    for i, line in enumerate(lines):
+        if ax is None:
+            ax = figure.add_subplot(111)
+            ax.grid(True)
+            if xaxis == 'time':
+                ax.set_xlabel("time (h)")
+            elif xaxis == 'distance':
+                ax.set_xlabel("distance (km)")
+        else:
+            ax = ax.twinx()
+        ax.plot(xes, line[0], COLORS[i], linewidth=0.8)
+        ax.set_ylabel(line[1], color=COLORS[i])
 
-    pylab.savefig(sys.stdout, format='png')
+    figure.savefig(sys.stdout, format='png')
