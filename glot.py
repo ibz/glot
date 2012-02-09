@@ -41,9 +41,21 @@ if __name__ == '__main__':
                 import out_plot
                 output_func = out_plot.gen
                 if ":" in val:
-                    output_objects = val[val.index(":") + 1:].split(",")
-                    output_options['elevation'] = "elevation" in output_objects
-                    output_options['speed'] = "speed" in output_objects
+                    params = val[val.index(":") + 1:]
+                    if "-" not in params:
+                        sys.stderr.write("please pass <xaxis>-<yaxis>[,...]\n.")
+                        sys.exit(1)
+                    xaxis, yaxis = params.split("-")
+                    if xaxis not in ['time', 'distance']:
+                        sys.stderr.write("xaxis must be time or distance.\n")
+                        sys.exit(1)
+                    yaxis = yaxis.split(",")
+                    for y in yaxis:
+                        if y not in ['speed', 'elevation']:
+                            sys.stderr.write("yaxis must be an enumeration of speed and elevation.\n")
+                            sys.exit(1)
+                    output_options['xaxis'] = xaxis
+                    output_options['yaxis'] = yaxis
             elif val.startswith("kml"):
                 import out_kml
                 output_func = out_kml.gen
