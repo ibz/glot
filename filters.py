@@ -77,13 +77,13 @@ def name_match_filter(radius):
 
         all_group_coords = {}
         for name, groups in all_points_grouped.iteritems():
-            all_group_coords[name] = [{'lat': avg([p.lat for p in group]), 'lon': avg([p.lon for p in group])} for group in groups]
+            all_group_coords[name] = [Point(lat=avg([p.lat for p in group]), lon=avg([p.lon for p in group]), ele=None, time=None, name=None) for group in groups]
 
         for path in paths:
             for i in range(len(path['points'])):
                 point = path['points'][i]
                 group_coords = find_closest_point(all_group_coords[point.name], point)
-                new_point = Point(group_coords['lat'], group_coords['lon'], point.ele, point.time, point.name)
+                new_point = Point(group_coords.lat, group_coords.lon, point.ele, point.time, point.name)
                 path['points'][i] = new_point
 
     return _filter
