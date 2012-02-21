@@ -20,13 +20,15 @@ def latlon2xy(lat, lon):
 def absolute(v, scale, min_v, max_v):
     return scale * (v - min_v) / (max_v - min_v)
 
+SVG_WIDTH = 1024
+SVG_HEIGHT = 1024
+
 SVG_START = """<?xml version="1.0" standalone="no" ?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="%s" height="%s" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <script xlink:href="http://svgpan.googlecode.com/svn/trunk/SVGPan.js" />
 <g id="viewport">
-<rect x="0" y="0" width="1000" height="1000" style="fill:white" />
-"""
+""" % (SVG_WIDTH, SVG_HEIGHT)
 
 SVG_END = "</g></svg>"
 
@@ -38,9 +40,6 @@ SVG_BACKGROUND = """
 <image opacity="1" x="%(x)s" y="%(y)s" width="%(w)s" height="%(h)s" xlink:href="http://a.tile.openstreetmap.org/%(zoom)s/%(tile_x)s/%(tile_y)s.png" />
 </g>
 """
-
-SVG_WIDTH = 1024
-SVG_HEIGHT = 1024
 
 def osm_get_tile(p, zoom):
     lat = math.radians(p['lat'])
@@ -191,9 +190,11 @@ def gen_weighted(paths, output_path=True, output_points=False):
         for (x, y), weight in sorted(points.iteritems(), key=lambda (p, w): w):
             if min_weight == max_weight:
                 color = "rgb(255,0,0)"
+                r = 1
             else:
-                color = "hsl(0,%s%%,%s%%)" % (10 + absolute(weight, 80, min_weight, max_weight), 80 - absolute(weight, 70, min_weight, max_weight))
-            params = {'x': absolute(x, SVG_WIDTH, min_x, max_x), 'y': absolute(y, SVG_HEIGHT, min_y, max_y), 'c': color}
-            sys.stdout.write("<circle cx=\"%(x)s\" cy=\"%(y)s\" r=\"1\" fill=\"%(c)s\" />\n" % params)
+                color = "hsl(0,%s%%,%s%%)" % (10 + absolute(weight, 80, min_weight, max_weight), 60 - absolute(weight, 50, min_weight, max_weight))
+                r = 1 + absolute(weight, 4, min_weight, max_weight)
+            params = {'x': absolute(x, SVG_WIDTH, min_x, max_x), 'y': absolute(y, SVG_HEIGHT, min_y, max_y), 'c': color, 'r': r}
+            sys.stdout.write("<circle cx=\"%(x)s\" cy=\"%(y)s\" r=\"%(r)s\" fill=\"%(c)s\" />\n" % params)
 
     sys.stdout.write(SVG_END)
