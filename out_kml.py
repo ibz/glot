@@ -30,7 +30,7 @@ def gen(paths, output_path=True, output_points=False):
             sys.stdout.write("<Folder><name>Points</name>\n")
             for point in path['points']:
                 name = point.name or ""
-                coordinates = "%(lon)s,%(lat)s" % point
+                coordinates = "%s,%s" % (point.lon, point.lat)
                 if point.ele is not None:
                     coordinates = "%s,%s" % (coordinates, point.ele)
                 timestamp = "<TimeStamp><when>%s</when></TimeStamp>" % point.time.strftime("%Y-%m-%dT%H:%M:%SZ") if point.time else ""
@@ -40,7 +40,7 @@ def gen(paths, output_path=True, output_points=False):
         if output_path:
             sys.stdout.write("<Placemark><name>Path</name><styleUrl>#line</styleUrl><LineString><tessellate>1</tessellate><coordinates>\n")
             for point in path['points']:
-                sys.stdout.write("%(lon)s,%(lat)s\n" % point)
+                sys.stdout.write("%s,%s\n" % (point.lon, point.lat))
             sys.stdout.write("</coordinates></LineString></Placemark>\n")
         sys.stdout.write("</Folder>\n")
     sys.stdout.write("</Folder>\n")
