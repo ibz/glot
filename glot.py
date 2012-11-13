@@ -88,6 +88,9 @@ if __name__ == '__main__':
         elif filename.endswith(".CSV"):
             import in_columbus
             input_func = in_columbus.parse
+        elif filename.endswith(".wkt"):
+            import in_wkt
+            input_func = in_wkt.parse
         else:
             sys.stderr.write("Can't guess file type from extension. filename: %s\n" % filename)
             sys.exit(1)
