@@ -45,7 +45,7 @@ def gen(paths):
                     min_ele = min(min_ele, p.ele)
                     max_ele = max(max_ele, p.ele)
                 ele_sum += p.ele
-            if has_time:
+            if has_time and p.time:
                 if min_time is None and max_time is None:
                     min_time = max_time = p.time
                 else:
