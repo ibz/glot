@@ -69,6 +69,13 @@ if __name__ == '__main__':
                     output_objects = val[val.index(":") + 1:].split(",")
                     output_options['output_path'] = "path" in output_objects
                     output_options['output_points'] = "points" in output_objects
+            elif val.startswith("wkt"):
+                import out_wkt
+                output_func = out_wkt.gen
+                if ":" in val:
+                    output_objects = val[val.index(":") + 1:].split(",")
+                    output_options['output_path'] = "path" in output_objects
+                    output_options['output_points'] = "points" in output_objects
             elif val.startswith("stats"):
                 import out_stats
                 output_func = out_stats.gen
@@ -85,6 +92,9 @@ if __name__ == '__main__':
         if filename.endswith(".gpx"):
             import in_gpx
             input_func = in_gpx.parse
+        elif filename.endswith(".kml"):
+            import in_kml
+            input_func = in_kml.parse
         elif filename.endswith(".CSV"):
             import in_columbus
             input_func = in_columbus.parse
