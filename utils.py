@@ -1,5 +1,6 @@
 from collections import namedtuple
-from math import sqrt, radians, sin, cos, tan, atan, atan2
+import math
+from math import sqrt, radians, sin, cos, tan, atan, atan2, log
 import re
 
 Point = namedtuple('Point', "lat lon ele time name")
@@ -60,6 +61,44 @@ def distance(p1, p2):
     delta_s = B * sin_s * (cos2_sm + B / 4 * (cos_s * (-1 + 2 * cos2_sm * cos2_sm) - B / 6 * cos2_sm * (-3 + 4 * sin_s * sin_s) * (-3 + 4 * cos2_sm * cos2_sm)))
 
     return b * A * (s - delta_s)
+
+def osm_get_tile_xy(lat, lon, zoom):
+    lat = radians(lat)
+    n = 2.0 ** zoom
+    tile_x = int((lon + 180.0) / 360.0 * n)
+    tile_y = int((1.0 - log(tan(lat) + (1 / cos(lat))) / math.pi) / 2.0 * n)
+    return (tile_x, tile_y)
+
+ORIGIN_SHIFT = 2 * math.pi * 6378137 / 2.0
+def latlng_to_xy(lat, lon):
+  x = lon * ORIGIN_SHIFT / 180.0
+  y = math.log(math.tan((90 + lat) * math.pi / 360.0 )) / (math.pi / 180.0)
+  y = y * ORIGIN_SHIFT / 180.0
+  return x, y
+
+def perpendicular_distance(p, p1, p2):
+    if p1['x'] == p2['x']:
+        return abs(p['x'] - p1['x'])
+    else:
+        slope = (p2['y'] - p1['y']) / (p2['x'] - p1['x'])
+        intercept = p1['y'] - (slope * p1['x'])
+        return abs(slope * p['x'] - p['y'] + intercept) / math.sqrt((slope ** 2) + 1)
+
+def simplify(path, epsilon):
+    # Ramer-Douglas-Peucker algorithm
+    if len(path) < 3:
+        return path
+    max_d = 0
+    index = None
+    for i in range(1, len(path)):
+        d = perpendicular_distance(path[i], path[0], path[-1])
+        if d > max_d:
+            max_d = d
+            index = i
+    if max_d > epsilon:
+        return simplify(path[:index + 1], epsilon)[:-1] + simplify(path[index:], epsilon)
+    else:
+        return [path[0], path[-1]]
 
 LATLON_RE = re.compile(r"^([0-9]+\.[0-9]+)([NSEW])$")
 

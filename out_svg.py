@@ -41,13 +41,6 @@ SVG_BACKGROUND = """
 </g>
 """
 
-def osm_get_tile(p, zoom):
-    lat = math.radians(p['lat'])
-    n = 2.0 ** zoom
-    tile_x = int((p['lon'] + 180.0) / 360.0 * n)
-    tile_y = int((1.0 - math.log(math.tan(lat) + (1 / math.cos(lat))) / math.pi) / 2.0 * n)
-    return (tile_x, tile_y)
-
 def osm_tile_nw(tile_x, tile_y, zoom):
     n = 2.0 ** zoom
     lon = tile_x / n * 360.0 - 180.0
@@ -59,7 +52,7 @@ def osm_get_tiles(map_nw, map_se):
     tiles_y = SVG_HEIGHT / OSM_TILE_HEIGHT
     zoom = 18
     while zoom > 0:
-        tile_x, tile_y = osm_get_tile(map_nw, zoom)
+        tile_x, tile_y = utils.osm_get_tile_xy(map_nw['lat'], map_nw['lon'], zoom)
         se = osm_tile_nw(tile_x + tiles_x, tile_y + tiles_y, zoom)
         if se['lat'] <= map_se['lat'] and se['lon'] >= map_se['lon']:
             break

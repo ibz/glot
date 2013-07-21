@@ -76,6 +76,11 @@ if __name__ == '__main__':
                     output_objects = val[val.index(":") + 1:].split(",")
                     output_options['output_path'] = "path" in output_objects
                     output_options['output_points'] = "points" in output_objects
+            elif val.startswith("geojson-tiles"):
+                import out_geojson_tiles
+                output_func = out_geojson_tiles.gen
+                options = val[val.index(":") + 1:].split(',')
+                output_options = {'min_zoom': int(options[0]), 'max_zoom': int(options[1]), 'output_path': options[2]}
             elif val.startswith("stats"):
                 import out_stats
                 output_func = out_stats.gen
