@@ -1,7 +1,7 @@
 from collections import defaultdict
 import math
 import os
-import simplejson
+import json
 
 import utils
 
@@ -31,7 +31,7 @@ def gen_for_zoom(paths, zoom, output_path):
             path = utils.simplify(path, epsilon)
             geojson_features.append({'type': 'Feature', 'geometry': {'type': 'LineString', 'coordinates': [(p['lon'], p['lat']) for p in path]}})
         with file(os.path.join(output_path, "%s_%s_%s.json" % (tile_key)), 'w') as f:
-            simplejson.dump(geojson_features, f)
+            json.dump(geojson_features, f)
 
 def gen(paths, min_zoom, max_zoom, output_path):
     for zoom in range(min_zoom, max_zoom + 1):
